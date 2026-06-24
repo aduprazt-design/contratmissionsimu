@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulateur Salaire contrat mission</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --surface-alt: #f2f2ef;
+      --border: #e0e0da;
+      --border-strong: #c8c8c0;
+      --text: #1a1a18;
+      --text-muted: #6b6b67;
+      --text-faint: #a0a09a;
+      --teal: #0f6e56;
+      --teal-light: #e1f5ee;
+      --teal-mid: #1d9e75;
+      --blue: #185fa5;
+      --blue-light: #e6f1fb;
+      --orange: #993c1d;
+      --orange-light: #faece7;
+      --orange-mid: #d85a30;
+      --mono: 'Courier New', 'Lucida Console', monospace;
+      --radius: 6px;
+      --radius-lg: 10px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111110;
+        --surface: #1c1c1a;
+        --surface-alt: #242422;
+        --border: #2e2e2c;
+        --border-strong: #3e3e3a;
+        --text: #e8e8e4;
+        --text-muted: #9a9a94;
+        --text-faint: #5a5a56;
+        --teal-light: #04342c;
+        --blue-light: #042c53;
+        --orange-light: #4a1b0c;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+    }
+
+    header h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      color: var(--text);
+    }
+
+    header span {
+      font-size: 12px;
+      color: var(--text-faint);
+      font-family: var(--mono);
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: flex;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 3px;
+      gap: 2px;
+      margin-bottom: 2rem;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all .15s;
+    }
+
+    .mode-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+
+    .mode-btn:hover:not(.active) {
+      color: var(--text);
+    }
+
+    /* Form */
+    .field-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 1rem;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      .input-grid { grid-template-columns: 1fr; }
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .input-group label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 9px 11px;
+      font-family: var(--mono);
+      font-size: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      transition: border-color .15s;
+      -moz-appearance: textfield;
+    }
+
+    .input-group input::-webkit-outer-spin-button,
+    .input-group input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--teal-mid);
+    }
+
+    .calc-btn {
+      width: 100%;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-top: .5rem;
+      margin-bottom: 2rem;
+      letter-spacing: -.01em;
+      transition: opacity .15s;
+    }
+
+    .calc-btn:hover { opacity: .85; }
+    .calc-btn:active { transform: scale(.99); }
+
+    /* Results */
+    .result-wrap { display: none; }
+    .result-wrap.visible { display: block; }
+
+    .recap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .recap-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+    }
+
+    .recap-card-label {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-weight: 500;
+    }
+
+    .recap-card-value {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .result-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-card-header-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .result-card-header-value {
+      font-family: var(--mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Proportion bar */
+    .prop-bar {
+      display: flex;
+      height: 5px;
+      margin: 0;
+      gap: 2px;
+    }
+
+    .prop-seg {
+      height: 100%;
+      transition: width .5s cubic-bezier(.4,0,.2,1);
+    }
+
+    .seg-base { background: var(--teal-mid); }
+    .seg-fer  { background: var(--blue); }
+    .seg-vac  { background: var(--orange-mid); }
+
+    /* Decomp rows */
+    .decomp-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .decomp-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .decomp-table tr:last-child {
+      border-bottom: none;
+      background: var(--surface-alt);
+    }
+
+    .decomp-table td {
+      padding: 10px 1.25rem;
+      font-size: 13px;
+    }
+
+    .decomp-table td:last-child {
+      text-align: right;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .row-label {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--text-muted);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .pct-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-left: 2px;
+    }
+
+    .badge-base { background: var(--teal-light); color: var(--teal); }
+    .badge-fer  { background: var(--blue-light); color: var(--blue); }
+    .badge-vac  { background: var(--orange-light); color: var(--orange); }
+
+    .total-label {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* Verification */
+    .verif {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: .9rem 1.25rem;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    .verif-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .verif-ok   { background: var(--teal-mid); }
+    .verif-warn { background: #ef9f27; }
+
+    .formula-note {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-top: 1rem;
+      line-height: 1.6;
+      font-family: var(--mono);
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 1.25rem;
+      padding: .75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-alt);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Simulateur Salaire contrat mission</h1>
+  <span>Paie suisse LSE · JF 3.17% · VAC 10.64%</span>
+</header>
+
+<div class="container">
+
+  <div class="mode-toggle" role="group" aria-label="Mode de calcul">
+    <button class="mode-btn active" id="btn-annual" onclick="setMode('annual')">Annuel → Journalier</button>
+    <button class="mode-btn" id="btn-daily" onclick="setMode('daily')">Vérifier un journalier</button>
+  </div>
+
+  <!-- Panel Annuel -->
+  <div id="panel-annual">
+    <p class="field-label">Paramètres</p>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="sal-annuel">Salaire annuel brut (CHF)</label>
+        <input type="number" id="sal-annuel" value="158000" step="1000" min="0">
+      </div>
+      <div class="input-group">
+        <label for="jours">Jours travaillés / an</label>
+        <input type="number" id="jours" value="232" step="1" min="1" max="365">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcAnnual()">Calculer la décomposition</button>
+
+    <div class="result-wrap" id="res-annual">
+      <div class="recap-grid" id="recap-annual"></div>
+      <div class="result-card">
+        <div class="result-card-header">
+          <span class="result-card-header-label">Salaire journalier total</span>
+          <span class="result-card-header-value" id="total-annual-display">—</span>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="dot seg-base"></span>Base</span>
+          <span class="legend-item"><span class="dot seg-fer"></span>Jours fériés</span>
+          <span class="legend-item"><span class="dot seg-vac"></span>Vacances</span>
+        </div>
+        <div class="prop-bar" id="bar-annual">
+          <div class="prop-seg seg-base" id="b-base" style="width:87.8%"></div>
+          <div class="prop-seg seg-fer"  id="b-fer"  style="width:2.8%"></div>
+          <div class="prop-seg seg-vac"  id="b-vac"  style="width:9.4%"></div>
+        </div>
+        <table class="decomp-table" id="decomp-annual">
+          <tbody></tbody>
+        </table>
+        <div class="verif" id="verif-annual"></div>
+      </div>
+      <p class="formula-note" id="formula-annual"></p>
+    </div>
+  </div>
+
+  <!-- Panel Daily -->
+  <div id="panel-daily" style="display:none">
+    <p class="field-label">Saisir les données du contrat</p>
+    <div class="input-grid">
+      <div class="input-group">
+        <label for="daily-total">Salaire journalier total (CHF)</label>
+        <input type="number" id="daily-total" placeholder="681.03" step="0.01" min="0">
+      </div>
+      <div class="input-group">
+        <label for="daily-base">Base déclarée (CHF) — optionnel</label>
+        <input type="number" id="daily-base" placeholder="laisser vide" step="0.01" min="0">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcDaily()">Vérifier la décomposition</button>
+
+    <div class="result-wrap" id="res-daily">
+      <div class="result-card">
+        <div class="result-card-header">
+          <span class="result-card-header-label">Salaire journalier total</span>
+          <span class="result-card-header-value" id="total-daily-display">—</span>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="dot seg-base"></span>Base</span>
+          <span class="legend-item"><span class="dot seg-fer"></span>Jours fériés</span>
+          <span class="legend-item"><span class="dot seg-vac"></span>Vacances</span>
+        </div>
+        <div class="prop-bar" id="bar-daily">
+          <div class="prop-seg seg-base" id="d-base" style="width:87.8%"></div>
+          <div class="prop-seg seg-fer"  id="d-fer"  style="width:2.8%"></div>
+          <div class="prop-seg seg-vac"  id="d-vac"  style="width:9.4%"></div>
+        </div>
+        <table class="decomp-table" id="decomp-daily">
+          <tbody></tbody>
+        </table>
+        <div class="verif" id="verif-daily"></div>
+      </div>
+      <p class="formula-note" id="formula-daily"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const JF  = 0.0317;
+  const VAC = 0.1064;
+  const MUL = 1 + JF + VAC; // 1.1381
+
+  function r2(n) { return Math.round(n * 100) / 100; }
+  function fmt(n) {
+    return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+  }
+  function fmtK(n) {
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+  }
+
+  function setMode(m) {
+    document.getElementById('btn-annual').classList.toggle('active', m === 'annual');
+    document.getElementById('btn-daily').classList.toggle('active', m === 'daily');
+    document.getElementById('panel-annual').style.display = m === 'annual' ? '' : 'none';
+    document.getElementById('panel-daily').style.display  = m === 'daily'  ? '' : 'none';
+  }
+
+  function buildDecomp(base, feries, vacances, total, tbodyId, barPrefix, verifId, formulaId, baseDeclaree) {
+    const totalCalc = r2(base + feries + vacances);
+    const diff = Math.abs(total - totalCalc);
+    const ok = diff < 0.03;
+
+    const pBase = (base   / total * 100).toFixed(1);
+    const pFer  = (feries / total * 100).toFixed(1);
+    const pVac  = (vacances/ total* 100).toFixed(1);
+
+    // Bar
+    document.getElementById(barPrefix + '-base').style.width = pBase + '%';
+    document.getElementById(barPrefix + '-fer').style.width  = pFer  + '%';
+    document.getElementById(barPrefix + '-vac').style.width  = pVac  + '%';
+
+    // Decomp table
+    const tbody = document.querySelector('#' + tbodyId + ' tbody');
+    tbody.innerHTML = `
+      <tr>
+        <td><span class="row-label"><span class="dot seg-base"></span>Salaire de base<span class="pct-badge badge-base">${pBase}%</span></span></td>
+        <td>CHF ${fmt(base)}</td>
+      </tr>
+      <tr>
+        <td><span class="row-label"><span class="dot seg-fer"></span>Ind. jours fériés (3,17%)<span class="pct-badge badge-fer">${pFer}%</span></span></td>
+        <td>CHF ${fmt(feries)}</td>
+      </tr>
+      <tr>
+        <td><span class="row-label"><span class="dot seg-vac"></span>Ind. vacances (10,64%)<span class="pct-badge badge-vac">${pVac}%</span></span></td>
+        <td>CHF ${fmt(vacances)}</td>
+      </tr>
+      <tr>
+        <td><span class="row-label total-label">Total reconstitué</span></td>
+        <td>CHF ${fmt(totalCalc)}</td>
+      </tr>`;
+
+    // Verification
+    const verifEl = document.getElementById(verifId);
+    if (ok) {
+      verifEl.innerHTML = `<span class="verif-dot verif-ok"></span>Base + jours fériés + vacances = CHF ${fmt(totalCalc)} ✓`;
+    } else {
+      verifEl.innerHTML = `<span class="verif-dot verif-warn"></span>Écart de CHF ${fmt(diff)} — arrondi probable ${diff < 0.05 ? '(normal)' : '⚠ à vérifier'}`;
+    }
+
+    // Base déclarée check
+    let baseCheck = '';
+    if (baseDeclaree && Math.abs(baseDeclaree - base) > 0.03) {
+      baseCheck = ` · Base déclarée : CHF ${fmt(baseDeclaree)} (écart CHF ${fmt(Math.abs(baseDeclaree - base))})`;
+    }
+
+    // Formula note
+    document.getElementById(formulaId).textContent =
+      `Formule : total = base × ${MUL.toFixed(4)}   |   base = total ÷ ${MUL.toFixed(4)}${baseCheck}`;
+  }
+
+  function calcAnnual() {
+    const annuel = parseFloat(document.getElementById('sal-annuel').value);
+    const jours  = parseFloat(document.getElementById('jours').value);
+    if (!annuel || !jours || jours <= 0) return;
+
+    const total    = r2(annuel / jours);
+    const base     = r2(total / MUL);
+    const feries   = r2(base * JF);
+    const vacances = r2(base * VAC);
+    const annuelRecalc = r2(total * jours);
+
+    // Header
+    document.getElementById('total-annual-display').textContent = 'CHF ' + fmt(total);
+
+    // Recap cards
+    document.getElementById('recap-annual').innerHTML = `
+      <div class="recap-card">
+        <div class="recap-card-label">Salaire annuel cible</div>
+        <div class="recap-card-value">CHF ${fmtK(annuel)}</div>
+      </div>
+      <div class="recap-card">
+        <div class="recap-card-label">Annuel reconstitué</div>
+        <div class="recap-card-value">CHF ${fmtK(annuelRecalc)}</div>
+      </div>
+      <div class="recap-card">
+        <div class="recap-card-label">Jours travaillés / an</div>
+        <div class="recap-card-value">${jours} j</div>
+      </div>
+      <div class="recap-card">
+        <div class="recap-card-label">Multiplicateur LSE</div>
+        <div class="recap-card-value">× ${MUL.toFixed(4)}</div>
+      </div>`;
+
+    buildDecomp(base, feries, vacances, total, 'decomp-annual', 'b', 'verif-annual', 'formula-annual', null);
+    document.getElementById('res-annual').classList.add('visible');
+  }
+
+  function calcDaily() {
+    const total       = parseFloat(document.getElementById('daily-total').value);
+    const baseDecl    = parseFloat(document.getElementById('daily-base').value) || null;
+    if (!total || total <= 0) return;
+
+    const base     = r2(total / MUL);
+    const feries   = r2(base * JF);
+    const vacances = r2(base * VAC);
+
+    document.getElementById('total-daily-display').textContent = 'CHF ' + fmt(total);
+    buildDecomp(base, feries, vacances, total, 'decomp-daily', 'd', 'verif-daily', 'formula-daily', baseDecl);
+    document.getElementById('res-daily').classList.add('visible');
+  }
+
+  // Lancer le calcul par défaut au chargement
+  calcAnnual();
+</script>
+</body>
+</html>
